@@ -1,53 +1,51 @@
 import { useState, useRef } from "react";
+import { signIn } from "next-auth/client";
 import classes from "./auth-form.module.css";
-
 async function createUser(email, password) {
-    const res = await fetch("/api/auth/signup", {
+    const response = await fetch("/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         headers: {
             "Content-Type": "application/json",
         },
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
+    const data = await response.json();
+    if (!response.ok) {
         throw new Error(data.message || "Something went wrong!");
     }
     return data;
 }
-
 function AuthForm() {
     const emailInputRef = useRef();
     const passwordInputRef = useRef();
-
     const [isLogin, setIsLogin] = useState(true);
-
     function switchAuthModeHandler() {
         setIsLogin((prevState) => !prevState);
     }
-
     async function submitHandler(event) {
         event.preventDefault();
-
         const enteredEmail = emailInputRef.current.value;
         const enteredPassword = passwordInputRef.current.value;
-
-        //client side validation
-
+        // optional: Add validation
         if (isLogin) {
-            //log user in
+            const result = await signIn("credentials", {
+                redirect: false,
+                email: enteredEmail,
+                password: enteredPassword,
+            });
+
+            if (!result.error) {
+                // set some auth state
+            }
         } else {
             try {
                 const result = await createUser(enteredEmail, enteredPassword);
-                console.log("result : ", result);
+                console.log(result);
             } catch (error) {
-                throw new Error("Something went wrong!");
+                console.log(error);
             }
         }
     }
-
     return (
         <section className={classes.auth}>
             <h1>{isLogin ? "Login" : "Sign Up"}</h1>
@@ -86,5 +84,4 @@ function AuthForm() {
         </section>
     );
 }
-
 export default AuthForm;
